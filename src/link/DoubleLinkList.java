@@ -95,7 +95,7 @@ public class DoubleLinkList<T> {
 
     public boolean insertAfter(T key,T value){
         if(isEmpty()){
-            System.out.println("Empty List!cammot insert!");
+            System.out.println("Empty List! Can not insert!");
             return false;
         }
         DoubleLinkNode<T> newNode = new DoubleLinkNode<T>(value);
@@ -103,7 +103,7 @@ public class DoubleLinkList<T> {
         while(!current.getVal().equals(key)){
             current = current.getNext();
             if(current == null){
-                System.out.println("cammot find key!");
+                System.out.println("Can not find key!");
                 return false;
             }
         }

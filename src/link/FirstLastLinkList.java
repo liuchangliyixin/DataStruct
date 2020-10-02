@@ -83,9 +83,15 @@ public class FirstLastLinkList<T> {
         FirstLastLinkNode parent = first;
         while(current != null){
             if(index.equals(current.getVal())){
+                if (first == last){
+                    first = last = null;
+                    return current;
+                }
+
                 if(current == first){
                     first = first.getNext();
                 }
+
                 if(current == last){
                     last = parent;
                 }
