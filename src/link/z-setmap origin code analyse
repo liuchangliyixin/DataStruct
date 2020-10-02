@@ -1,0 +1,398 @@
+HashSet
+    实现 Set 接口，由哈希表（实际上是一个 HashMap 实例）支持。它不保证 set 的迭代顺序；特别是它不保证该顺序恒久不变。此类允许使用 null 元素。
+    底层数据结构是 哈希表，HashSet的本质是一个"没有重复元素"的集合，它是通过HashMap实现的。
+    HashSet中含有一个HashMap类型的成员变量map，在HashSet中操作函数，实际上都是通过map实现的。所以了解了HashMap就了解了HashSet。
+
+    无参构造函数：
+        public HashSet() {
+            map = new HashMap<>();
+        }
+    add方法：
+        public boolean add(E e) {
+            return map.put(e, PRESENT)==null;//map的key就是我们添加的值，而value就是一个Object
+        }
+        private static final Object PRESENT = new Object();
+
+TreeSet
+    基于TreeMap的 NavigableSet实现。使用元素的自然顺序对元素进行排序，或者根据创建 set 时提供的 Comparator进行排序，具体取决于使用的构造方法。
+    1. TreeSet 是一个有序的并且可排序的集合，它继承于AbstractSet抽象类，实现了NavigableSet<E>, Cloneable, java.io.Serializable接口。
+    2. TreeSet是基于TreeMap实现的。TreeSet中的元素支持2种排序方式：自然排序 或者 根据创建TreeSet 时提供的 Comparator 进行排序。这取决于使用的构造方法。
+    同样的了解了TreeMap就了解了TreeSet。
+
+    无参构造函数：
+        public TreeSet() {
+            this(new TreeMap<E,Object>());
+        }
+        TreeSet(NavigableMap<E,Object> m) {
+            this.m = m;
+        }
+        private transient NavigableMap<E,Object> m;
+    add方法：
+        public boolean add(E e) {
+            return m.put(e, PRESENT)==null;//map的key就是我们添加的值，而value就是一个Object
+        }
+        private static final Object PRESENT = new Object();
+
+Map
+    Map集合的特点
+        1.能够存储唯一的列的数据(唯一，不可重复) Set
+        2.能够存储可以重复的数据(可重复) List
+        3.值的顺序取决于键的顺序
+        4.键和值都是可以存储null元素的
+
+TreeMap
+    TreeMap底层的实现原理是红黑树，所以我们要搞清楚TreeMap的底层原理，那么前提条件就是必须要搞清楚红黑树的原理。
+    无参构造函数：
+        public TreeMap() {
+            comparator = null;
+        }
+        private final Comparator<? super K> comparator;
+    红黑树的节点：
+        static final class Entry<K,V> implements Map.Entry<K,V> {
+            K key;
+            V value;
+            Entry<K,V> left;
+            Entry<K,V> right;
+            Entry<K,V> parent;
+            boolean color = BLACK;
+
+            /**
+             * Make a new cell with given key, value, and parent, and with
+             * {@code null} child links, and BLACK color.
+             */
+            Entry(K key, V value, Entry<K,V> parent) {
+                this.key = key;
+                this.value = value;
+                this.parent = parent;
+            }
+            ......
+        }
+    put方法：
+        public V put(K key, V value) {
+            //root 赋值给 局部变量 t ， 值为null
+            Entry<K,V> t = root;
+            //t 是 null ，没有数据 ，进入if代码块 ，初始化
+            if (t == null) {
+                //检查 key 是否为空
+                compare(key, key); // type (and possibly null) check
+                //将插入的 key value 封装成 Entry，并赋值给 root
+                root = new Entry<>(key, value, null);
+                //插入一个根节点 长度是1
+                size = 1;
+                modCount++;
+                return null;
+            }
+            int cmp;//用于保存比较结果，判断新节点是左子节点还是右子节点
+            Entry<K,V> parent;//用于保存要插入节点的父节点
+            // split comparator and comparable paths
+            Comparator<? super K> cpr = comparator;//获取比较器
+            //判断比较器是否为空
+            if (cpr != null) {//比较器不为空
+                do {
+                    parent = t;
+                    cmp = cpr.compare(key, t.key);
+                    if (cmp < 0)
+                        t = t.left;
+                    else if (cmp > 0)
+                        t = t.right;
+                    else
+                        return t.setValue(value);
+                } while (t != null);
+            }
+            else {//比较器为空
+                if (key == null)
+                    throw new NullPointerException();
+                @SuppressWarnings("unchecked")
+                    Comparable<? super K> k = (Comparable<? super K>) key;
+                do {
+                    parent = t;
+                    cmp = k.compareTo(t.key);
+                    if (cmp < 0)
+                        t = t.left;
+                    else if (cmp > 0)
+                        t = t.right;
+                    else
+                        return t.setValue(value);
+                } while (t != null);
+            }
+            Entry<K,V> e = new Entry<>(key, value, parent);
+            if (cmp < 0)
+                parent.left = e;
+            else
+                parent.right = e;
+            fixAfterInsertion(e);//平衡红黑树
+            size++;
+            modCount++;
+            return null;
+        }
+
+        //实现红黑树的平衡
+        private void fixAfterInsertion(Entry<K,V> x) {
+            //x是新插入的节点，设置为红色
+            x.color = RED;
+            //插入节点的父节点为红色节点，如果父节点为黑色节点直接插入即可
+            while (x != null && x != root && x.parent.color == RED) {
+                //x的父节点 是 x的祖父节点 的左子节点
+                if (parentOf(x) == leftOf(parentOf(parentOf(x)))) {
+                    //y 是 x 的叔叔节点
+                    Entry<K,V> y = rightOf(parentOf(parentOf(x)));
+                    //叔叔节点为红色
+                    if (colorOf(y) == RED) {
+                        setColor(parentOf(x), BLACK);//将x的父节点设置为黑色
+                        setColor(y, BLACK);//将x的叔叔节点设置为黑色
+                        setColor(parentOf(parentOf(x)), RED);//将x的祖父节点设置为红色
+                        x = parentOf(parentOf(x));//将x的祖父节点作为当前插入节点
+                    } else {//叔叔节点不存在 或者 为黑色
+                        if (x == rightOf(parentOf(x))) {//x是其父节点的右子节点，需要对x的父节点进行左旋
+                            x = parentOf(x);//获取x的父节点 并赋值给x ，也就是 将 x的父节点 作为 新的插入节点
+                            rotateLeft(x);//对x的父节点进行左旋
+                        }
+                        //x 是 x父节点的左子节点
+                        setColor(parentOf(x), BLACK);//将x的父节点设置为黑色
+                        setColor(parentOf(parentOf(x)), RED);//将x的祖父节点设置为红色
+                        rotateRight(parentOf(parentOf(x)));//对x的祖父节点进行右旋
+                    }
+                } else {//x的父节点 是 x的祖父节点 的右子节点
+                    //获取x的叔叔节点
+                    Entry<K,V> y = leftOf(parentOf(parentOf(x)));
+                    if (colorOf(y) == RED) {//x的叔叔节点为红色
+                        setColor(parentOf(x), BLACK);//将x的父节点设置为黑色
+                        setColor(y, BLACK);//将x的叔叔节点设置为黑色
+                        setColor(parentOf(parentOf(x)), RED);//将x的祖父节点设置为红色
+                        x = parentOf(parentOf(x));//将x的祖父节点作为当前插入节点
+                    } else {//x的叔叔节点为黑色或者不存在
+                        if (x == leftOf(parentOf(x))) {//如果x是其父节点的左子节点
+                            x = parentOf(x);//获取x的父节点 并赋值给x ，也就是 将 x的父节点 作为 新的插入节点
+                            rotateRight(x);//对x的父节点进行右旋
+                        }
+                        setColor(parentOf(x), BLACK);//将x的父节点设置为黑色
+                        setColor(parentOf(parentOf(x)), RED);//将x的祖父节点设置为红色
+                        rotateLeft(parentOf(parentOf(x)));//对x的祖父节点进行左旋
+                    }
+                }
+            }
+            root.color = BLACK;//最后将根节点设置为黑色
+        }
+        //左旋：将当前节点的右子节点设置为当前节点的父节点。将当前节点的右子节点的左子节点设置为当前节点的右子节点
+        private void rotateLeft(Entry<K,V> p) {
+            if (p != null) {
+                Entry<K,V> r = p.right;//获取当前节点的右子节点
+                p.right = r.left;//将 右子节点的左子节点 设置为 当前节点的右子节点
+                if (r.left != null)//关联右子节点的左子节点 的 父节点 为 当前节点
+                    r.left.parent = p;
+                r.parent = p.parent;//关联右子节点 的 父节点 为 当前节点的父节点
+                if (p.parent == null)//如果当前节点的父节点是 null，那么就将右子节点 设置为 根节点
+                    root = r;
+                else if (p.parent.left == p)//关联当前节点的父节点的 子节点(左右) 为 右子节点
+                    p.parent.left = r;
+                else
+                    p.parent.right = r;
+                r.left = p;//设置 右子节点 的左子节点 为当前节点
+                p.parent = r;//设置 当前节点 的 父节点 为 右子节点
+            }
+        }
+        //右旋：将当前节点的左子节点设置为当前节点的父节点。将当前节点的左子节点的右子节点设置为当前节点的左子节点
+        private void rotateRight(Entry<K,V> p) {
+            if (p != null) {
+                Entry<K,V> l = p.left;//获取当前节点的左子节点
+                p.left = l.right;//将 左子节点 的 右子节点 设置为 当前节点 的 左子节点
+                if (l.right != null) l.right.parent = p;//关联 左子节点 的 右子节点 的 父节点 为 当前节点
+                l.parent = p.parent;//将 当前节点 的 父节点 设置为 左子节点 的 父节点
+                if (p.parent == null)//如果当前节点的父节点为 null，那么就将 左子节点 设置为 根节点
+                    root = l;
+                else if (p.parent.right == p)//设置 当前节点 的 父节点的子节点(左右) 为 左子节点
+                    p.parent.right = l;
+                else p.parent.left = l;
+                l.right = p;//设置 左子节点的 右子节点 为 当前节点
+                p.parent = l;//设置 当前节点 的 父节点 为 左子节点
+            }
+        }
+
+HashMap
+    HashMap底层结构
+       Jdk1.7及以前是采用数组+链表
+       Jdk1.8之后 采用数组+链表  或者  数组+红黑树方式进行元素的存储
+    存储在hashMap集合中的元素都将是一个Map.Entry的内部接口的实现
+
+    局部变量--默认值
+        //默认数组的长度：16
+        static final int DEFAULT_INITIAL_CAPACITY = 1 << 4; // aka 16
+        //数组的最大容量
+        static final int MAXIMUM_CAPACITY = 1 << 30;
+        //默认的扩容因子
+        static final float DEFAULT_LOAD_FACTOR = 0.75f;
+        //链表转红黑树的临界值
+        static final int TREEIFY_THRESHOLD = 8;
+        //红黑树转链表的临界值
+        static final int UNTREEIFY_THRESHOLD = 6;
+        //链表转红黑树的数组长度的临界值
+        static final int MIN_TREEIFY_CAPACITY = 64;
+    局部变量
+        //HashMap中的数组
+        transient Node<K,V>[] table;
+        //HashMap中的键值对的缓存 Holds cached entrySet(). Note that AbstractMap fields are used for keySet() and values().
+        transient Set<Map.Entry<K,V>> entrySet;
+        //HashMap中的元素个数
+        transient int size;
+        //HashMap的操作次数
+        transient int modCount;
+        //HashMap的扩容临界值：capacity * load factor
+        int threshold;
+        //HashMap的扩容因子
+        final float loadFactor;
+
+    put方法：
+        public V put(K key, V value) {
+            return putVal(hash(key), key, value, false, true);
+        }
+        //获取key对应的Hash值
+        //key.hashCode() 32位长度的二进制的值
+        //(h = key.hashCode()) ^ (h >>> 16)  就是 key.hashCode() 与自身右移16位(无符号右移，高位补0) 异或(相同为0，不同为1) ： 尽量打乱hashcode的低16位，避免散列分布不均匀
+        //https://www.cnblogs.com/wang-meng/p/9b6c35c4b2ef7e5b398db9211733292d.html
+        static final int hash(Object key) {
+            int h;
+            return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);
+        }
+
+        final V putVal(int hash, K key, V value, boolean onlyIfAbsent,boolean evict) {
+            Node<K,V>[] tab; Node<K,V> p; int n, i;
+            if ((tab = table) == null || (n = tab.length) == 0)//初始判断 table 是 null，table 的长度是0
+                n = (tab = resize()).length;//初始化数组，扩容 第一次n为16
+            //下标值 = (n-1) & hash  ，第一次初始化：n-1 = 15(1111)
+            if ((p = tab[i = (n - 1) & hash]) == null)
+                tab[i] = newNode(hash, key, value, null);//如果下标值所在的位置没有数据，创建节点赋值，结束方法
+            else {//如果下标值所在的位置有数据
+                Node<K,V> e; K k;
+                if (p.hash == hash && //p是数组中原有的数据，也就是新插入的数据的hash值和原有数据的hash值相同
+                    ((k = p.key) == key || (key != null && key.equals(k))))//key值也想通
+                    e = p;//直接修改原有的数据
+                else if (p instanceof TreeNode)//表示数组中存放的节点是红黑树节点
+                    e = ((TreeNode<K,V>)p).putTreeVal(this, tab, hash, key, value);
+                else {//链表版本
+                    for (int binCount = 0; ; ++binCount) {
+                        if ((e = p.next) == null) {//链表尾部
+                            p.next = newNode(hash, key, value, null);//将新插入数据放在链表尾部
+                            //判断是否满足转红黑树的条件
+                            if (binCount >= TREEIFY_THRESHOLD - 1) // -1 for 1st
+                                treeifyBin(tab, hash);//转红黑树
+                            break;
+                        }
+                        if (e.hash == hash &&
+                            ((k = e.key) == key || (key != null && key.equals(k))))
+                            break;
+                        p = e;//继续循环判断下一个节点
+                    }
+                }
+                if (e != null) { // existing mapping for key
+                    V oldValue = e.value;
+                    if (!onlyIfAbsent || oldValue == null)
+                        e.value = value;
+                    afterNodeAccess(e);
+                    return oldValue;
+                }
+            }
+            ++modCount;
+            if (++size > threshold)
+                resize();
+            afterNodeInsertion(evict);
+            return null;
+        }
+
+        //扩容方法
+        final Node<K,V>[] resize() {
+            Node<K,V>[] oldTab = table;//原来的数组，第一次初始化为null
+            int oldCap = (oldTab == null) ? 0 : oldTab.length;//数组的长度，第一次为0，第二次为16
+            int oldThr = threshold;//扩容临界值，第一次为0，第二次为12
+            int newCap, newThr = 0;//新的数组长度和扩容临界值
+            if (oldCap > 0) {
+                if (oldCap >= MAXIMUM_CAPACITY) {
+                    threshold = Integer.MAX_VALUE;
+                    return oldTab;
+                }
+                //第二次 newCap 是 32 ， newThr 是 24
+                else if ((newCap = oldCap << 1) < MAXIMUM_CAPACITY &&
+                         oldCap >= DEFAULT_INITIAL_CAPACITY)
+                    newThr = oldThr << 1; // double threshold
+            }
+            else if (oldThr > 0) // initial capacity was placed in threshold
+                newCap = oldThr;
+            else {               // zero initial threshold signifies using defaults  第一次初始化
+                newCap = DEFAULT_INITIAL_CAPACITY; //第一次默认 16
+                newThr = (int)(DEFAULT_LOAD_FACTOR * DEFAULT_INITIAL_CAPACITY);//第一次默认：16*0.75 = 12
+            }
+            if (newThr == 0) {
+                float ft = (float)newCap * loadFactor;
+                newThr = (newCap < MAXIMUM_CAPACITY && ft < (float)MAXIMUM_CAPACITY ?
+                          (int)ft : Integer.MAX_VALUE);
+            }
+            threshold = newThr;//更新扩容临界值 第一次初始化为12，第二次为24
+            @SuppressWarnings({"rawtypes","unchecked"})
+                Node<K,V>[] newTab = (Node<K,V>[])new Node[newCap];//初始化数组，第一次是16，第二次是32
+            table = newTab;//更新数组值
+            if (oldTab != null) {
+                for (int j = 0; j < oldCap; ++j) {
+                    Node<K,V> e;
+                    if ((e = oldTab[j]) != null) {//暂存原来数组的值
+                        oldTab[j] = null;//将当前位置的数组的值清空
+                        if (e.next == null)//如果当前位置没有形成链表，直接赋值
+                            newTab[e.hash & (newCap - 1)] = e;
+                        else if (e instanceof TreeNode)//如果当前位置是红黑树
+                            ((TreeNode<K,V>)e).split(this, newTab, j, oldCap);
+                        else { // preserve order  当前位置是链表
+                            Node<K,V> loHead = null, loTail = null;
+                            Node<K,V> hiHead = null, hiTail = null;
+                            Node<K,V> next;
+                            do {
+                                next = e.next;
+                                if ((e.hash & oldCap) == 0) {
+                                    if (loTail == null)
+                                        loHead = e;
+                                    else
+                                        loTail.next = e;
+                                    loTail = e;
+                                }
+                                else {
+                                    if (hiTail == null)
+                                        hiHead = e;
+                                    else
+                                        hiTail.next = e;
+                                    hiTail = e;
+                                }
+                            } while ((e = next) != null);
+                            if (loTail != null) {
+                                loTail.next = null;
+                                newTab[j] = loHead;
+                            }
+                            if (hiTail != null) {
+                                hiTail.next = null;
+                                newTab[j + oldCap] = hiHead;
+                            }
+                        }
+                    }
+                }
+            }
+            return newTab;
+        }
+
+        //链表转红黑树
+        final void treeifyBin(Node<K,V>[] tab, int hash) {
+            int n, index; Node<K,V> e;
+            //数组为空 或 数组长度小于64 ， 进行扩容
+            if (tab == null || (n = tab.length) < MIN_TREEIFY_CAPACITY)
+                resize();
+            else if ((e = tab[index = (n - 1) & hash]) != null) {//链表长度大于8 ，数组长度大于64 ，转换红黑树
+                TreeNode<K,V> hd = null, tl = null;
+                do {
+                    TreeNode<K,V> p = replacementTreeNode(e, null);
+                    if (tl == null)
+                        hd = p;
+                    else {
+                        p.prev = tl;
+                        tl.next = p;
+                    }
+                    tl = p;
+                } while ((e = e.next) != null);
+                if ((tab[index] = hd) != null)
+                    hd.treeify(tab);
+            }
+        }

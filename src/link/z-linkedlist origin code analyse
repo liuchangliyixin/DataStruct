@@ -1,0 +1,51 @@
+LinkedList源码分析
+    内部节点类：
+        private static class Node<E> {
+            E item;//元素
+            Node<E> next;//下一个节点
+            Node<E> prev;//上一个节点
+
+            Node(Node<E> prev, E element, Node<E> next) {
+                this.item = element;
+                this.next = next;
+                this.prev = prev;
+            }
+        }
+    get方法：
+        public E get(int index) {
+            checkElementIndex(index);
+            return node(index).item;
+        }
+
+        private void checkElementIndex(int index) {
+            if (!isElementIndex(index))
+                throw new IndexOutOfBoundsException(outOfBoundsMsg(index));
+        }
+
+        private boolean isElementIndex(int index) {
+            return index >= 0 && index < size;
+        }
+
+        Node<E> node(int index) {//虽然传的参数是下标，但是本质上还是遍历
+            // assert isElementIndex(index);
+            //如果index 小于 size 的一半，就从第一个节点开始遍历，否则从最后一个节点开始遍历
+            if (index < (size >> 1)) {
+                Node<E> x = first;
+                for (int i = 0; i < index; i++)
+                    x = x.next;
+                return x;
+            } else {
+                Node<E> x = last;
+                for (int i = size - 1; i > index; i--)
+                    x = x.prev;
+                return x;
+            }
+        }
+    set方法：
+        public E set(int index, E element) {
+            checkElementIndex(index);
+            Node<E> x = node(index);
+            E oldVal = x.item;
+            x.item = element;
+            return oldVal;
+        }

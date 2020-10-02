@@ -1,0 +1,118 @@
+ArrayList源码分析：
+    无参构造函数：
+        private static final Object[] DEFAULTCAPACITY_EMPTY_ELEMENTDATA = {};
+        public ArrayList() {
+            this.elementData = DEFAULTCAPACITY_EMPTY_ELEMENTDATA;
+        }
+    有参构造函数：
+        public ArrayList(int initialCapacity) {
+            if (initialCapacity > 0) {
+                this.elementData = new Object[initialCapacity];
+            } else if (initialCapacity == 0) {
+                this.elementData = EMPTY_ELEMENTDATA;
+            } else {
+                throw new IllegalArgumentException("Illegal Capacity: "+ initialCapacity);
+            }
+        }
+    add方法：
+        public boolean add(E e) {
+            //确定容量
+            ensureCapacityInternal(size + 1);  // Increments modCount!!
+            elementData[size++] = e;
+            return true;
+        }
+
+        private void ensureCapacityInternal(int minCapacity) {
+            //底层数组容器 ==  默认数组容器 即空数组：{}
+            if (elementData == DEFAULTCAPACITY_EMPTY_ELEMENTDATA) {
+                //private static final int DEFAULT_CAPACITY = 10; 默认为10
+                minCapacity = Math.max(DEFAULT_CAPACITY, minCapacity);
+            }
+
+            ensureExplicitCapacity(minCapacity);
+        }
+
+        private void ensureExplicitCapacity(int minCapacity) {
+            modCount++;//操作次数 自增
+
+            // overflow-conscious code  当前下标比数组的容量大
+            if (minCapacity - elementData.length > 0)
+                //扩容
+                grow(minCapacity);
+        }
+
+        private void grow(int minCapacity) {
+            // overflow-conscious code
+            int oldCapacity = elementData.length;
+            //右移一位 相当于除以2 也就是 1.5 * oldCapacity
+            int newCapacity = oldCapacity + (oldCapacity >> 1);
+            if (newCapacity - minCapacity < 0)
+                newCapacity = minCapacity;
+            //private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
+            if (newCapacity - MAX_ARRAY_SIZE > 0)
+                newCapacity = hugeCapacity(minCapacity);
+            // minCapacity is usually close to size, so this is a win:
+            elementData = Arrays.copyOf(elementData, newCapacity);
+        }
+
+        private static int hugeCapacity(int minCapacity) {
+            if (minCapacity < 0) // overflow
+                throw new OutOfMemoryError();
+            return (minCapacity > MAX_ARRAY_SIZE) ? Integer.MAX_VALUE : MAX_ARRAY_SIZE;
+        }
+    get方法：
+        public E get(int index) {
+            rangeCheck(index);
+            return elementData(index);
+        }
+
+        private void rangeCheck(int index) {
+            if (index >= size)
+                throw new IndexOutOfBoundsException(outOfBoundsMsg(index));
+        }
+    set方法：
+        public E set(int index, E element) {
+            rangeCheck(index);
+
+            E oldValue = elementData(index);
+            elementData[index] = element;
+            return oldValue;
+        }
+    remove方法：
+        public E remove(int index) {
+            rangeCheck(index);
+
+            modCount++;
+            E oldValue = elementData(index);
+            //要移动元素个数
+            int numMoved = size - index - 1;
+            if (numMoved > 0)
+                /**
+                *源数组 开始下标 目标数组 开始下标 长度
+                *将源数组从 开始下标 开始的元素 移动到 目标数组 从 开始下标 开始的位置
+                *这里源数组和目标数组是同一个数组，即为将 index+1 之后的 numMoved 个元素 移动到 index 位置
+                System.arraycopy(elementData, index+1, elementData, index, numMoved);
+            elementData[--size] = null; // clear to let GC do its work
+
+            return oldValue;
+        }
+    FailFast机制
+        快速失败机制,是java集合类应对并发访问在对集合进行迭代过程中,内部对象结构发生变化一种防护措施.
+        这种错误检测的机制为这种有可能发生错误,通过抛出java.util.ConcurrentModificationException。
+        对应 modCount++ 操作。
+    Vector
+        Vector的底层与我们的ArrayList类似.都是以动态数组的方式进行对象的存储。
+        Vector是线程同步操作安全的.通过给每一个方法都加synchronized关键字，所以性能会有很大的影响，慢慢不再使用。
+        如果想要使ArrayList是线程安全的，可以使用Collections工具类的synchronizedList方法：通过在原有的方法加同步代码块的包装。
+            public E get(int index) {
+                synchronized (mutex) {return list.get(index);}
+            }
+            public E set(int index, E element) {
+                synchronized (mutex) {return list.set(index, element);}
+            }
+            public void add(int index, E element) {
+                synchronized (mutex) {list.add(index, element);}
+            }
+            public E remove(int index) {
+                synchronized (mutex) {return list.remove(index);}
+            }
