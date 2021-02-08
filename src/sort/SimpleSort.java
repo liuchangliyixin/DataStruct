@@ -46,7 +46,7 @@ public class SimpleSort {
         int min,in,out;
         //外层循环从 0 开始，到 倒数第二个数据
         for(out = 0;out < size-1;out++){
-            min = out;//最小值默认是第一个开始遍历的数据
+            min = out;//最小数标记 默认是 第一个开始遍历的数据
             //内层循环从 外层循环的下一个数据开始，到 最后一个数据
             for(in = out+1;in < size;in++){
                 //如果比最小的数据小，就将 min 指向 这个最小的数据位置
@@ -85,6 +85,40 @@ public class SimpleSort {
         }
     }
 
+    /**
+      * @Author yixiu
+      * @Description 希尔排序
+      * @Date 16:01 2020/12/10
+      * @Param
+      * @return
+      **/
+    public static void shellShort(int[] nums){
+        int size = nums.length;
+        int temp;
+        int in,out;
+
+        //设置数据间隔
+        int h = 1;
+        while(h <= size/3) {
+            h = h*3 + 1;
+        }
+
+        while(h > 0){
+            //外层循环从间隔数据开始
+            for(out = h;out < size;out++){
+                temp = nums[out];
+                in = out;
+                //内层循环 按数据间隔比较排序
+                while(in > h-1 && nums[in-h] >= temp){
+                    nums[in] = nums[in-h];
+                    in-=h;
+                }
+                nums[in]  = temp;
+            }
+            h = (h-1)/3;
+        }
+    }
+
     public static void show(int[] nums){
         for (int i = 0; i < nums.length; i++) {
             System.out.print(nums[i]+" ");
@@ -97,7 +131,8 @@ public class SimpleSort {
         show(nums);
         //bubbleSort(nums);
         //selectSort(nums);
-        insertSort(nums);
+        //insertSort(nums);
+        shellShort(nums);
         show(nums);
     }
 }
